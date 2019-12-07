@@ -1,0 +1,2 @@
+# mailgo
+Golang Mailgun Library
