@@ -44,7 +44,7 @@ func handleResponse(res *http.Response) error {
 }
 
 func (m Messenger) url() string {
-	return fullURL := fmt.Sprintf(
+	return fmt.Sprintf(
 		"https://api:%s@api.mailgun.net/v3/%s/messages",
 		m.apiKey,
 		m.senderDomain,
