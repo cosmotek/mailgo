@@ -43,13 +43,16 @@ func handleResponse(res *http.Response) error {
 	return nil
 }
 
-func (m Messenger) Send(subject, to, text string, from Sender) error {
-	fullURL := fmt.Sprintf(
-		"https://api:%s@api.mailgun.net/v3/samples.mailgun.org/messages",
+func (m Messenger) url() string {
+	return fullURL := fmt.Sprintf(
+		"https://api:%s@api.mailgun.net/v3/%s/messages",
 		m.apiKey,
+		m.senderDomain,
 	)
+}
 
-	res, err := http.PostForm(fullURL, url.Values{
+func (m Messenger) Send(subject, to, text string, from Sender) error {
+	res, err := http.PostForm(m.url(), url.Values{
 		"from":    {string(from)},
 		"to":      {to},
 		"subject": {subject},
@@ -64,13 +67,7 @@ func (m Messenger) Send(subject, to, text string, from Sender) error {
 }
 
 func (m Messenger) SendHTML(subject, to, html string, from Sender) error {
-	// key-<some hash>
-	fullURL := fmt.Sprintf(
-		"https://api:%s@api.mailgun.net/v3/samples.mailgun.org/messages",
-		m.apiKey,
-	)
-
-	res, err := http.PostForm(fullURL, url.Values{
+	res, err := http.PostForm(m.url(), url.Values{
 		"from":    {string(from)},
 		"to":      {to},
 		"subject": {subject},
