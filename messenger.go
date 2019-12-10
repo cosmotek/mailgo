@@ -2,6 +2,7 @@ package mailgo
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 )
@@ -29,35 +30,55 @@ func (m Messenger) GenerateSender(name, emailUser string) Sender {
 	return Sender(fmt.Sprintf("%s <%s@%s>", name, emailUser, m.senderDomain))
 }
 
+func handleResponse(res *http.Response) error {
+	if res.StatusCode != http.StatusOK {
+		resBody, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			return fmt.Errorf("failed to complete error build, could not read response body: %s", err.Error())
+		}
+
+		return fmt.Errorf("failed to send email: status_code:%d, res_body:'%s'", res.StatusCode, string(resBody))
+	}
+
+	return nil
+}
+
 func (m Messenger) Send(subject, to, text string, from Sender) error {
 	fullURL := fmt.Sprintf(
 		"https://api:%s@api.mailgun.net/v3/samples.mailgun.org/messages",
 		m.apiKey,
 	)
 
-	_, err := http.PostForm(fullURL, url.Values{
+	res, err := http.PostForm(fullURL, url.Values{
 		"from":    {string(from)},
 		"to":      {to},
 		"subject": {subject},
 		"text":    {text},
 	})
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	return handleResponse(res)
 }
 
-func (m Messenger) SendHTML(subject, from, to, html string) error {
+func (m Messenger) SendHTML(subject, to, html string, from Sender) error {
 	// key-<some hash>
 	fullURL := fmt.Sprintf(
 		"https://api:%s@api.mailgun.net/v3/samples.mailgun.org/messages",
 		m.apiKey,
 	)
 
-	_, err := http.PostForm(fullURL, url.Values{
-		"from":    {from},
+	res, err := http.PostForm(fullURL, url.Values{
+		"from":    {string(from)},
 		"to":      {to},
 		"subject": {subject},
 		"html":    {html},
 	})
+	if err != nil {
+		return err
+	}
 
-	return err
+	return handleResponse(res)
 }
